@@ -59,66 +59,73 @@ class NoogUI {
     const t = this.audioCtx.currentTime;
     
     if (type === 'place') {
-      const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(300, t);
-      osc.frequency.exponentialRampToValueAtTime(150, t + 0.1);
-      gain.gain.setValueAtTime(0.15, t);
-      gain.gain.linearRampToValueAtTime(0, t + 0.1);
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + 0.1);
-    } else if (type === 'merge') {
+      // Soft water drop
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(200, t);
-      osc.frequency.exponentialRampToValueAtTime(600, t + 0.25);
-      gain.gain.setValueAtTime(0.15, t);
-      gain.gain.linearRampToValueAtTime(0, t + 0.25);
+      osc.frequency.setValueAtTime(600, t);
+      osc.frequency.exponentialRampToValueAtTime(1000, t + 0.08);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
       osc.start(t);
-      osc.stop(t + 0.25);
-    } else if (type === 'capture') {
-      const osc = this.audioCtx.createOscillator();
-      const gain = this.audioCtx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(150, t);
-      osc.frequency.linearRampToValueAtTime(40, t + 0.3);
-      gain.gain.setValueAtTime(0.2, t);
-      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-      osc.connect(gain);
-      gain.connect(this.audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + 0.3);
-    } else if (type === 'clear') {
-      const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+      osc.stop(t + 0.08);
+    } else if (type === 'merge') {
+      // Soft two-tone wind chime
+      const notes = [659.25, 830.61]; // E5, G#5 (Major Third)
       notes.forEach((freq, idx) => {
         const osc = this.audioCtx.createOscillator();
         const gain = this.audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, t + idx * 0.08);
-        gain.gain.setValueAtTime(0.1, t + idx * 0.08);
-        gain.gain.linearRampToValueAtTime(0, t + idx * 0.08 + 0.2);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.06);
+        gain.gain.setValueAtTime(0.05, t + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + 0.25);
         osc.connect(gain);
         gain.connect(this.audioCtx.destination);
-        osc.start(t + idx * 0.08);
-        osc.stop(t + idx * 0.08 + 0.2);
+        osc.start(t + idx * 0.06);
+        osc.stop(t + idx * 0.06 + 0.25);
       });
-    } else if (type === 'error') {
+    } else if (type === 'capture') {
+      // Gentle temple gong / singing bowl
       const osc = this.audioCtx.createOscillator();
       const gain = this.audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(100, t);
-      gain.gain.setValueAtTime(0.15, t);
-      gain.gain.linearRampToValueAtTime(0, t + 0.15);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180, t);
+      osc.frequency.linearRampToValueAtTime(150, t + 0.6);
+      gain.gain.setValueAtTime(0.12, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
       osc.connect(gain);
       gain.connect(this.audioCtx.destination);
       osc.start(t);
-      osc.stop(t + 0.15);
+      osc.stop(t + 0.6);
+    } else if (type === 'clear') {
+      // Shimmering wind chime cascade
+      const notes = [1046.50, 1318.51, 1567.98, 2093.00]; // C6, E6, G6, C7
+      notes.forEach((freq, idx) => {
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+        gain.gain.setValueAtTime(0.04, t + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.3);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start(t + idx * 0.05);
+        osc.stop(t + idx * 0.05 + 0.3);
+      });
+    } else if (type === 'error') {
+      // Muted soft base thud (no buzzer)
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(90, t);
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.12);
     }
   }
 
@@ -330,7 +337,7 @@ class NoogUI {
   }
 
   showGameOverOverlay(isWin) {
-    this.dialogTitle.textContent = isWin ? "Victory Achieved!" : "Simulation Locked";
+    this.dialogTitle.textContent = isWin ? "Victory!" : "Board Locked";
     
     const nextIdx = this.game.levelIndex + 1;
     const hasNext = isWin && this.game.mode === 'puzzle' && nextIdx < window.levels.length;
@@ -338,15 +345,15 @@ class NoogUI {
     this.levelList.innerHTML = `
       <div style="text-align: center; padding: 20px 0;">
         <p style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 12px;">
-          ${isWin ? "All malware qubits isolated and purged!" : "No legal moves remaining in circuit matrix."}
+          ${isWin ? "All dark stones successfully captured and cleared!" : "No legal moves remaining on the board."}
         </p>
         <p style="font-size: 1.5rem; font-weight: 800; color: var(--qubit-cyan);">
           Score: ${this.game.score}
         </p>
       </div>
       <div style="display: flex; flex-direction: column; gap: 12px;">
-        ${hasNext ? `<button id="btn-next-level" class="btn primary">Next Circuit Matrix</button>` : ''}
-        <button id="btn-restart-game" class="btn">Retry Circuit</button>
+        ${hasNext ? `<button id="btn-next-level" class="btn primary">Next Level</button>` : ''}
+        <button id="btn-restart-game" class="btn">Restart Level</button>
         <button id="btn-menu-back" class="btn">Change Level</button>
       </div>
     `;
@@ -536,7 +543,7 @@ class NoogUI {
         vx: (Math.random() - 0.5) * 3,
         vy: (Math.random() - 0.5) * 3,
         radius: Math.random() * 3 + 2,
-        color: 'rgba(0, 240, 255, 0.8)',
+        color: 'rgba(74, 107, 93, 0.7)',
         alpha: 1,
         decay: Math.random() * 0.03 + 0.02
       });
@@ -556,7 +563,7 @@ class NoogUI {
         vx: (Math.random() - 0.5) * 4,
         vy: (Math.random() - 0.5) * 4,
         radius: Math.random() * 4 + 3,
-        color: '#f8fafc',
+        color: '#ebdcb9',
         alpha: 1,
         decay: Math.random() * 0.04 + 0.02
       });
@@ -569,8 +576,8 @@ class NoogUI {
     const x = (c + 0.5) * cellWidth;
     const y = (r + 0.5) * cellWidth;
     
-    const color = type === 'enemy' ? 'rgba(255, 94, 0, 0.8)' : 
-                  type === 'player' ? 'rgba(0, 240, 255, 0.8)' : '#a5f3fc';
+    const color = type === 'enemy' ? 'rgba(41, 42, 44, 0.7)' : 
+                  type === 'player' ? 'rgba(240, 237, 230, 0.8)' : '#ebdcb9';
     
     for (let i = 0; i < 12; i++) {
       this.particles.push({

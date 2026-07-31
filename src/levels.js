@@ -2,7 +2,7 @@ const levels = [
   {
     id: 1,
     name: "1. The Conversion",
-    description: "Welcome to Noog. Place a blue stone to sandwich the orange enemy stone between two blue stones. This is flanking; it converts the enemy to your side!",
+    description: "Welcome to Noog. Place a white stone to sandwich the dark enemy stone between two white stones. This is flanking; it converts the enemy to your side!",
     moves: 3,
     board: [
       [null, null, null, null, null, null],
@@ -17,7 +17,7 @@ const levels = [
   {
     id: 2,
     name: "2. Liberty Trap",
-    description: "Stones connect and share liberties (empty adjacent spaces). Trap the orange enemy in the corner by placing blue stones on all of its adjacent spaces. (0 liberties = captured!)",
+    description: "Stones connect and share liberties (empty adjacent spaces). Trap the dark enemy in the corner by placing white stones on all of its adjacent spaces. (0 liberties = captured!)",
     moves: 2,
     board: [
       [{ color: 'enemy', value: 1 }, null, null, null, null, null],
@@ -32,7 +32,7 @@ const levels = [
   {
     id: 3,
     name: "3. Power Siege",
-    description: "An enemy can only be captured if all adjacent player stones are of equal or higher strength. Merge your blue 1s by placing them adjacent to each other to form a 2, then surround the Level 2 enemy!",
+    description: "An enemy can only be captured if all adjacent player stones are of equal or higher strength. Merge your white 1s by placing them adjacent to each other to form a 2, then surround the Level 2 enemy!",
     moves: 4,
     board: [
       [null, null, null, null, null, null],
@@ -47,7 +47,7 @@ const levels = [
   {
     id: 4,
     name: "4. Sudoku Barriers",
-    description: "Remember: You cannot place a blue stone of value V in a row or column that already contains a blue V. Use merging or smart placement to get past this lock!",
+    description: "Remember: You cannot place a white stone of value V in a row or column that already contains a white V. Use merging or smart placement to get past this lock!",
     moves: 4,
     board: [
       [null, null, null, null, null, null],
@@ -77,7 +77,7 @@ const levels = [
   {
     id: 6,
     name: "6. The Wall",
-    description: "A defensive wall of Orange level 1 and 2 stones blocking the grid. Flank them to convert the wall, or surround them to clear space.",
+    description: "A defensive wall of dark level 1 and 2 stones blocking the grid. Flank them to convert the wall, or surround them to clear space.",
     moves: 7,
     board: [
       [null, null, null, null, null, null],
@@ -91,8 +91,8 @@ const levels = [
   },
   {
     id: 7,
-    name: "7. Fortress of Fire",
-    description: "A Level 3 fortress is defended by Level 1 and 2 guards. You will need to build high-level qubits (3 or higher) by merging to successfully capture it.",
+    name: "7. The High Citadel",
+    description: "A Level 3 fortress is defended by Level 1 and 2 guards. You will need to build high-level stones (3 or higher) by merging to successfully capture it.",
     moves: 9,
     board: [
       [null, null, null, null, null, null],
