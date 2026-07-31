@@ -4,8 +4,8 @@
   "description": "An original single-player logic puzzle fusing Go, Othello, and Sudoku rules.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#f6f5ef",
+  "theme_color": "#4a6b5d",
   "orientation": "portrait-primary",
   "categories": ["games", "utilities"],
   "icons": [
