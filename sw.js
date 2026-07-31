@@ -1,4 +1,4 @@
-const CACHE_NAME = 'noog-cache-v5';
+const CACHE_NAME = 'noog-cache-v6';
 const ASSETS = [
   './',
   './index.html',

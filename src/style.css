@@ -256,40 +256,42 @@ header {
   animation: flip-3d 0.5s ease-out;
 }
 
-/* Hand Queue Component */
+/* Footer side-by-side grid */
+.footer-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+  align-items: center;
+}
+
 .hand-container {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 14px;
+  border-radius: 16px;
+  padding: 8px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
-}
-
-.hand-label {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  margin-bottom: 0;
+  height: 64px;
 }
 
 .hand-stones {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: 70px;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
 }
 
 .hand-slot {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.03);
   border: 1px dashed rgba(0, 0, 0, 0.1);
@@ -301,23 +303,13 @@ header {
 
 .hand-slot.active {
   border-color: var(--qubit-cyan);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   transform: scale(1.08);
   cursor: grab;
 }
 
 .hand-slot.active:active {
   cursor: grabbing;
-}
-
-.hand-slot.active::before {
-  content: 'PLACE';
-  position: absolute;
-  bottom: -15px;
-  font-size: 0.55rem;
-  color: var(--qubit-cyan);
-  font-weight: 700;
-  letter-spacing: 0.5px;
 }
 
 .hand-slot .stone {
@@ -328,38 +320,53 @@ header {
 }
 
 .hand-slot.next-1 {
-  transform: scale(0.9);
-  opacity: 0.65;
+  transform: scale(0.85);
+  opacity: 0.35; /* Stronger fade, was 0.65 */
 }
 
 .hand-slot.next-2 {
-  transform: scale(0.8);
-  opacity: 0.35;
+  transform: scale(0.72);
+  opacity: 0.12; /* Stronger fade, was 0.35 */
 }
 
-/* Control Buttons HUD */
-.controls {
+/* Action Controls Column */
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 64px;
+}
+
+.button-group-top {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 6px;
+}
+
+.button-group-bottom {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
 }
 
 .btn {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 4px 6px;
   color: var(--text-primary);
   font-family: var(--font-family);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   transition: background-color 0.2s, border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  height: 29px;
+  box-sizing: border-box;
 }
 
 .btn:hover {

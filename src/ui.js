@@ -286,7 +286,7 @@ class NoogUI {
       
       this.movesLabelElement.textContent = "Moves Left";
       this.movesValueElement.textContent = this.game.movesRemaining;
-      this.modeToggleBtn.innerHTML = '🌸 Zen Survival';
+      this.modeToggleBtn.innerHTML = '🌸 Zen';
       this.levelSelectBtn.style.display = 'flex';
     } else {
       this.levelTitleElement.textContent = "Zen Survival";
@@ -295,7 +295,7 @@ class NoogUI {
       // Waves countdown
       const count = 3 - (this.game.deckIndex % 3);
       this.movesValueElement.textContent = count === 3 ? 3 : count;
-      this.modeToggleBtn.innerHTML = '🧩 Switch Puzzle Mode';
+      this.modeToggleBtn.innerHTML = '🧩 Puzzle';
       this.levelSelectBtn.style.display = 'none';
     }
 

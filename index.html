@@ -69,42 +69,33 @@
       <canvas id="particle-canvas"></canvas>
     </div>
 
-    <!-- Hand / Placement Queue -->
-    <div class="hand-container">
-      <div class="hand-label">
-        <span>Active Stone (Hand)</span>
-        <span>Incoming Queue</span>
+    <!-- Side-by-Side Footer Panel -->
+    <div class="footer-panel">
+      <!-- Hand / Placement Queue (Left) -->
+      <div class="hand-container">
+        <div class="hand-stones" id="hand-stones">
+          <!-- Hand slots populated by UI script -->
+        </div>
       </div>
-      <div class="hand-stones" id="hand-stones">
-        <!-- Hand slots populated by UI script -->
+
+      <!-- Actions & Options Grid (Right) -->
+      <div class="actions-container">
+        <div class="button-group-top">
+          <button id="btn-undo" class="btn" title="Undo" disabled>↩️ Undo</button>
+          <button id="btn-redo" class="btn" title="Redo" disabled>↪️ Redo</button>
+          <button id="btn-reset" class="btn" title="Reset">🔄 Reset</button>
+        </div>
+        <div class="button-group-bottom">
+          <button id="btn-level-select" class="btn">🧩 Levels</button>
+          <button id="btn-mode-toggle" class="btn">🌸 Zen</button>
+        </div>
       </div>
     </div>
 
-    <!-- Game Control Actions -->
-    <div class="controls">
-      <button id="btn-undo" class="btn" disabled>
-        ↩️ Undo
-      </button>
-      <button id="btn-redo" class="btn" disabled>
-        ↪️ Redo
-      </button>
-      <button id="btn-reset" class="btn">
-        🔄 Reset
-      </button>
-    </div>
-
-    <!-- PWA / Extra Options -->
-    <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">
-      <button id="btn-level-select" class="btn">
-        🧩 Select Matrix (Levels)
-      </button>
-      <button id="btn-mode-toggle" class="btn">
-        ⚡ Switch Zen Mode
-      </button>
-      <button id="btn-install" class="btn primary" style="display: none;">
-        📲 Install Noog to Device
-      </button>
-    </div>
+    <!-- PWA Install Button (Compact) -->
+    <button id="btn-install" class="btn primary" style="display: none; margin-top: 10px; width: 100%;">
+      📲 Install App
+    </button>
   </div>
 
   <!-- Overlay / Levels Dialog -->
