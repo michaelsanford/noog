@@ -165,16 +165,16 @@ levels.push(
   }
 );
 
-// Generate levels 9 to 55 programmatically
-for (let id = 9; id <= 55; id++) {
+// Generate levels 9 to 200 programmatically
+for (let id = 9; id <= 200; id++) {
   const name = generateLevelName(id);
   const board = createEmptyBoard();
   const deck = [];
   
   // Decide layout pattern and difficulty based on level ID
   let diff = 'easy';
-  if (id > 35) diff = 'hard';
-  else if (id > 20) diff = 'medium';
+  if (id > 140) diff = 'hard';
+  else if (id > 60) diff = 'medium';
   
   let moves = 5;
   let description = "";
@@ -269,4 +269,4 @@ if (typeof module !== 'undefined' && module.exports) {
 `;
 
 fs.writeFileSync(path.join(__dirname, '../src/levels.js'), fileContent, 'utf-8');
-console.log("Successfully generated 55 levels in src/levels.js!");
+console.log(`Successfully generated ${levels.length} levels in src/levels.js!`);
