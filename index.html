@@ -31,7 +31,10 @@
     <!-- Header / HUD -->
     <header>
       <div class="title-area">
-        <h1>NOOG</h1>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <h1>NOOG</h1>
+          <button id="btn-info" class="info-icon-btn" title="Level info">ℹ️</button>
+        </div>
         <p id="level-title">1. The Conversion</p>
       </div>
       <div class="stats">
@@ -46,9 +49,9 @@
       </div>
     </header>
 
-    <!-- Description / Instructions Panel -->
-    <div class="info-panel" style="margin-bottom: 16px;">
-      <p id="level-description">Welcome to Noog. Place a white stone to sandwich the dark enemy stone. This is flanking; it converts the enemy to your side!</p>
+    <!-- Playthrough Tutorial Banner -->
+    <div id="tutorial-banner" class="tutorial-banner" style="display: none;">
+      <p id="tutorial-text"></p>
     </div>
 
     <!-- Board Container -->

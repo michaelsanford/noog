@@ -1,3 +1,46 @@
+const TUTORIAL_STEPS = {
+  0: [ // Level 1 (The Conversion)
+    {
+      r: 2, c: 3, // D3
+      text: "Place a white stone at D3. This sandwiches the dark stone, converting it to your side."
+    }
+  ],
+  1: [ // Level 2 (Liberty Trap)
+    {
+      r: 0, c: 1, // B6
+      text: "The dark stone at A6 has only 2 liberties. Tap B6 to block the first liberty."
+    },
+    {
+      r: 1, c: 0, // A5
+      text: "Now it has only 1 liberty left. Tap A5 to capture the stone and clear it."
+    }
+  ],
+  2: [ // Level 3 (Power Siege)
+    {
+      r: 0, c: 1, // B6
+      text: "The B5 enemy is strength 2. We need a Level 2 stone. Tap B6 to place your first 1."
+    },
+    {
+      r: 0, c: 2, // C6
+      text: "Tap C6 to place another 1. The two adjacent stones will merge into a Level 2 stone."
+    },
+    {
+      r: 2, c: 1, // B4
+      text: "Now tap B4. This flanks B5 with your Level 2 stone, converting and capturing it!"
+    }
+  ],
+  3: [ // Level 4 (Sudoku Barriers)
+    {
+      r: 2, c: 2, // C4
+      text: "You cannot place a stone that creates row/col value conflicts. Tap C4 first."
+    },
+    {
+      r: 1, c: 2, // C5
+      text: "Now tap C5 to place another 1, merging with C4 to form a 2 and solve the row lock."
+    }
+  ]
+};
+
 class NoogUI {
   constructor() {
     this.game = new NoogGame('puzzle', 0);
@@ -10,7 +53,9 @@ class NoogUI {
     this.gridElement = document.getElementById('board-grid');
     this.handElement = document.getElementById('hand-stones');
     this.levelTitleElement = document.getElementById('level-title');
-    this.levelDescElement = document.getElementById('level-description');
+    this.infoBtn = document.getElementById('btn-info');
+    this.tutorialBanner = document.getElementById('tutorial-banner');
+    this.tutorialText = document.getElementById('tutorial-text');
     
     this.scoreElement = document.getElementById('score-value');
     this.movesLabelElement = document.getElementById('moves-label');
@@ -185,6 +230,11 @@ class NoogUI {
       this.openLevelSelect();
     });
 
+    this.infoBtn.addEventListener('click', () => {
+      this.initAudio();
+      this.openInfoDialog();
+    });
+
     this.modeToggleBtn.addEventListener('click', () => {
       this.initAudio();
       const nextMode = this.game.mode === 'puzzle' ? 'infinite' : 'puzzle';
@@ -233,17 +283,15 @@ class NoogUI {
     if (this.game.mode === 'puzzle') {
       const level = window.levels[this.game.levelIndex];
       this.levelTitleElement.textContent = level.name;
-      this.levelDescElement.textContent = level.description;
       
       this.movesLabelElement.textContent = "Moves Left";
       this.movesValueElement.textContent = this.game.movesRemaining;
-      this.modeToggleBtn.innerHTML = '⚡ Switch Zen Mode';
+      this.modeToggleBtn.innerHTML = '🌸 Zen Survival';
       this.levelSelectBtn.style.display = 'flex';
     } else {
       this.levelTitleElement.textContent = "Zen Survival";
-      this.levelDescElement.textContent = "Infinite mode. Score as much as possible! Enemies spawn every 3 moves. Avoid gridlocks.";
       
-      this.movesLabelElement.textContent = "Next Enemy Wave";
+      this.movesLabelElement.textContent = "Next Spawn";
       // Waves countdown
       const count = 3 - (this.game.deckIndex % 3);
       this.movesValueElement.textContent = count === 3 ? 3 : count;
@@ -334,6 +382,8 @@ class NoogUI {
       this.playSound('error');
       setTimeout(() => this.showGameOverOverlay(false), 600);
     }
+
+    this.updateTutorial();
   }
 
   showGameOverOverlay(isWin) {
@@ -380,6 +430,64 @@ class NoogUI {
       });
     }
 
+    this.overlay.classList.add('active');
+  }
+
+  updateTutorial() {
+    // Clear previous tutorial highlights
+    Array.from(this.gridElement.children).forEach(cell => {
+      cell.classList.remove('tutorial-highlight');
+    });
+
+    if (this.game.mode !== 'puzzle') {
+      this.tutorialBanner.style.display = 'none';
+      return;
+    }
+
+    const steps = TUTORIAL_STEPS[this.game.levelIndex];
+    if (steps) {
+      const stepIdx = this.game.history.length;
+      if (stepIdx < steps.length) {
+        const step = steps[stepIdx];
+        this.tutorialBanner.style.display = 'flex';
+        this.tutorialText.textContent = step.text;
+
+        const cellIdx = step.r * this.game.boardSize + step.c;
+        const cell = this.gridElement.children[cellIdx];
+        if (cell) {
+          cell.classList.add('tutorial-highlight');
+        }
+      } else {
+        this.tutorialBanner.style.display = 'none';
+      }
+    } else {
+      this.tutorialBanner.style.display = 'none';
+    }
+  }
+
+  openInfoDialog() {
+    this.dialogTitle.textContent = this.game.mode === 'puzzle'
+      ? window.levels[this.game.levelIndex].name
+      : "Zen Mode Info";
+      
+    const desc = this.game.mode === 'puzzle'
+      ? window.levels[this.game.levelIndex].description
+      : "Survive as long as possible. Place stones from your hand. Every 3 moves, new dark stones spawn. Merge matching white stones to build higher values (1+1=2, 2+2=3, etc.) and clear rows/columns by making unique 1-6 lines.";
+
+    this.levelList.innerHTML = `
+      <div style="padding: 10px 0; line-height: 1.5; color: var(--text-primary); font-size: 0.9rem; text-align: left;">
+        <p>${desc}</p>
+        <div style="margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+          <strong style="color: var(--text-primary);">Quick Rules Reference:</strong>
+          <ul style="margin-top: 6px; padding-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+            <li><strong>Placement:</strong> No duplicate values in any row/col.</li>
+            <li><strong>Flanking:</strong> Sandwich dark stones between white ones to convert them.</li>
+            <li><strong>Merging:</strong> Adjacent same-value white stones combine (V + V = V+1).</li>
+            <li><strong>Capturing:</strong> Enclosed dark stones are captured if surrounding white stones are stronger.</li>
+          </ul>
+        </div>
+      </div>
+    `;
     this.overlay.classList.add('active');
   }
 
