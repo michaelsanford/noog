@@ -63,18 +63,20 @@ Since Noog is a static web application built with vanilla HTML, CSS, and JavaScr
 
 ---
 
-## Deploying to GitHub Pages
+## Deploying to GitHub Pages & CI/CD Automation
 
-Yes! You can publish this game to **GitHub Pages** directly from the **repository root** of your `main` branch. 
+This repository includes a **GitHub Actions Workflow** (`.github/workflows/deploy.yml`) that automates deployments and resolves cache invalidation:
 
-To deploy it:
-1. Push your repository to GitHub.
-2. Go to your repository settings on GitHub.
+1. **Auto-Deployment**: Every push to the `main` branch automatically triggers the deployment of the static assets to GitHub Pages.
+2. **Auto-Versioned Service Worker Cache**: During the deployment run, the workflow injects the unique GitHub Actions build run number (`github.run_number`) into `sw.js` (replacing `CACHE_NAME`). This ensures client device browsers detect the change and pull fresh assets immediately, bypassing stale local cache states.
+
+### Setup Instructions on GitHub:
+1. Push this repository to GitHub.
+2. Navigate to your repository's **Settings** tab.
 3. In the left sidebar, click **Pages**.
-4. Under **Build and deployment**, select **Deploy from a branch** as the source.
-5. In the **Branch** dropdown, select `main` and set the folder selector to `/ (root)`.
-6. Click **Save**.
-7. Within a couple of minutes, GitHub will build and host your game at `https://<your-username>.github.io/<your-repo-name>/`.
+4. Under **Build and deployment** -> **Source**, select **GitHub Actions** from the dropdown list.
+5. Once selected, your pushes will build and host the game automatically at `https://<your-username>.github.io/<your-repo-name>/`.
+
 
 ---
 
