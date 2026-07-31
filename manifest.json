@@ -1,0 +1,19 @@
+{
+  "name": "Noog: The Sudo-Flank Puzzle",
+  "short_name": "Noog",
+  "description": "An original single-player logic puzzle fusing Go, Othello, and Sudoku rules.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "categories": ["games", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

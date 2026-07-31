@@ -1,0 +1,619 @@
+class NoogUI {
+  constructor() {
+    this.game = new NoogGame('puzzle', 0);
+    this.selectedHandIndex = 0; // index of stone in hand (always 0 since it is the active one)
+    this.draggedValue = null;
+    this.audioCtx = null;
+    this.particles = [];
+    
+    // DOM Elements
+    this.gridElement = document.getElementById('board-grid');
+    this.handElement = document.getElementById('hand-stones');
+    this.levelTitleElement = document.getElementById('level-title');
+    this.levelDescElement = document.getElementById('level-description');
+    
+    this.scoreElement = document.getElementById('score-value');
+    this.movesLabelElement = document.getElementById('moves-label');
+    this.movesValueElement = document.getElementById('moves-value');
+    
+    this.undoBtn = document.getElementById('btn-undo');
+    this.redoBtn = document.getElementById('btn-redo');
+    this.resetBtn = document.getElementById('btn-reset');
+    this.levelSelectBtn = document.getElementById('btn-level-select');
+    this.modeToggleBtn = document.getElementById('btn-mode-toggle');
+    
+    this.overlay = document.getElementById('level-overlay');
+    this.dialogTitle = document.getElementById('dialog-title');
+    this.levelList = document.getElementById('level-list');
+    this.closeOverlayBtn = document.getElementById('btn-close-overlay');
+    
+    this.particleCanvas = document.getElementById('particle-canvas');
+    this.ctx = this.particleCanvas.getContext('2d');
+    
+    this.installBtn = document.getElementById('btn-install');
+    this.deferredPrompt = null;
+    
+    this.initEvents();
+    this.initPWA();
+    this.resizeCanvas();
+    this.animateParticles();
+    this.render();
+  }
+
+  // Audio Synth via Web Audio API
+  initAudio() {
+    if (this.audioCtx) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      this.audioCtx = new AudioContextClass();
+    }
+  }
+
+  playSound(type) {
+    this.initAudio();
+    if (!this.audioCtx || this.audioCtx.state === 'suspended') {
+      // User hasn't interacted or audio context blocked
+      return;
+    }
+
+    const t = this.audioCtx.currentTime;
+    
+    if (type === 'place') {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.exponentialRampToValueAtTime(150, t + 0.1);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.1);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.1);
+    } else if (type === 'merge') {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(200, t);
+      osc.frequency.exponentialRampToValueAtTime(600, t + 0.25);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.25);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    } else if (type === 'capture') {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, t);
+      osc.frequency.linearRampToValueAtTime(40, t + 0.3);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.3);
+    } else if (type === 'clear') {
+      const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+      notes.forEach((freq, idx) => {
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.08);
+        gain.gain.setValueAtTime(0.1, t + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0, t + idx * 0.08 + 0.2);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start(t + idx * 0.08);
+        osc.stop(t + idx * 0.08 + 0.2);
+      });
+    } else if (type === 'error') {
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(100, t);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.15);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.15);
+    }
+  }
+
+  // PWA Support
+  initPWA() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.installBtn.style.display = 'flex';
+    });
+
+    this.installBtn.addEventListener('click', async () => {
+      if (!this.deferredPrompt) return;
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      console.log(`PWA install choice: ${outcome}`);
+      this.deferredPrompt = null;
+      this.installBtn.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('Noog PWA installed successfully');
+      this.installBtn.style.display = 'none';
+    });
+  }
+
+  initEvents() {
+    // Window Resize for canvas overlays
+    window.addEventListener('resize', () => this.resizeCanvas());
+
+    // Controls
+    this.undoBtn.addEventListener('click', () => {
+      this.initAudio();
+      if (this.game.undo()) {
+        this.playSound('place');
+        this.render();
+      }
+    });
+
+    this.redoBtn.addEventListener('click', () => {
+      this.initAudio();
+      if (this.game.redo()) {
+        this.playSound('place');
+        this.render();
+      }
+    });
+
+    this.resetBtn.addEventListener('click', () => {
+      this.initAudio();
+      this.game.init();
+      this.playSound('clear');
+      this.render();
+    });
+
+    this.levelSelectBtn.addEventListener('click', () => {
+      this.initAudio();
+      this.openLevelSelect();
+    });
+
+    this.modeToggleBtn.addEventListener('click', () => {
+      this.initAudio();
+      const nextMode = this.game.mode === 'puzzle' ? 'infinite' : 'puzzle';
+      this.game = new NoogGame(nextMode, 0);
+      this.playSound('clear');
+      this.render();
+    });
+
+    this.closeOverlayBtn.addEventListener('click', () => {
+      this.overlay.classList.remove('active');
+    });
+
+    // Touch support for dragging
+    document.addEventListener('pointerup', () => {
+      this.draggedValue = null;
+    });
+  }
+
+  openLevelSelect() {
+    this.dialogTitle.textContent = "Select Level";
+    this.levelList.innerHTML = '';
+    
+    // Add Puzzle levels
+    window.levels.forEach((level, index) => {
+      const div = document.createElement('div');
+      div.className = `level-item ${this.game.mode === 'puzzle' && this.game.levelIndex === index ? 'active' : ''}`;
+      div.innerHTML = `
+        <h4>${level.name}</h4>
+        <p>${level.description.substring(0, 70)}...</p>
+      `;
+      div.addEventListener('click', () => {
+        this.game = new NoogGame('puzzle', index);
+        this.playSound('clear');
+        this.overlay.classList.remove('active');
+        this.render();
+      });
+      this.levelList.appendChild(div);
+    });
+
+    this.overlay.classList.add('active');
+  }
+
+  // Render Loop
+  render() {
+    // Render HUD
+    if (this.game.mode === 'puzzle') {
+      const level = window.levels[this.game.levelIndex];
+      this.levelTitleElement.textContent = level.name;
+      this.levelDescElement.textContent = level.description;
+      
+      this.movesLabelElement.textContent = "Moves Left";
+      this.movesValueElement.textContent = this.game.movesRemaining;
+      this.modeToggleBtn.innerHTML = '⚡ Switch Zen Mode';
+      this.levelSelectBtn.style.display = 'flex';
+    } else {
+      this.levelTitleElement.textContent = "Zen Survival";
+      this.levelDescElement.textContent = "Infinite mode. Score as much as possible! Enemies spawn every 3 moves. Avoid gridlocks.";
+      
+      this.movesLabelElement.textContent = "Next Enemy Wave";
+      // Waves countdown
+      const count = 3 - (this.game.deckIndex % 3);
+      this.movesValueElement.textContent = count === 3 ? 3 : count;
+      this.modeToggleBtn.innerHTML = '🧩 Switch Puzzle Mode';
+      this.levelSelectBtn.style.display = 'none';
+    }
+
+    this.scoreElement.textContent = this.game.score;
+    
+    // Render Controls Active State
+    this.undoBtn.disabled = this.game.history.length === 0;
+    this.redoBtn.disabled = this.game.redoStack.length === 0;
+
+    // Render Grid
+    this.gridElement.innerHTML = '';
+    for (let r = 0; r < this.game.boardSize; r++) {
+      for (let c = 0; c < this.game.boardSize; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        
+        const stoneData = this.game.board[r][c];
+        if (stoneData) {
+          const stone = document.createElement('div');
+          stone.className = `stone ${stoneData.color}`;
+          stone.textContent = stoneData.value;
+          cell.appendChild(stone);
+        }
+
+        // Event listeners
+        cell.addEventListener('pointerdown', (e) => {
+          this.initAudio();
+          this.handleCellPlacement(r, c);
+        });
+
+        cell.addEventListener('pointerenter', () => {
+          this.handleCellHover(cell, r, c);
+        });
+
+        cell.addEventListener('pointerleave', () => {
+          cell.className = 'cell';
+          this.clearPreMergePreviews();
+        });
+
+        this.gridElement.appendChild(cell);
+      }
+    }
+
+    // Render Hand Queue
+    this.handElement.innerHTML = '';
+    this.game.hand.forEach((val, idx) => {
+      if (val === null) return;
+      
+      const slot = document.createElement('div');
+      slot.className = `hand-slot slot-${idx}`;
+      if (idx === 0) {
+        slot.classList.add('active');
+        slot.setAttribute('draggable', 'true');
+        
+        // Drag events
+        slot.addEventListener('dragstart', (e) => {
+          this.draggedValue = val;
+          // Set transparent drag image
+          const img = new Image();
+          img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+          e.dataTransfer.setDragImage(img, 0, 0);
+        });
+      } else if (idx === 1) {
+        slot.classList.add('next-1');
+      } else if (idx === 2) {
+        slot.classList.add('next-2');
+      }
+      
+      const stone = document.createElement('div');
+      stone.className = 'stone player';
+      stone.textContent = val;
+      
+      slot.appendChild(stone);
+      this.handElement.appendChild(slot);
+    });
+
+    // Check Win/Game Over dialog
+    if (this.game.checkWin()) {
+      this.playSound('clear');
+      setTimeout(() => this.showGameOverOverlay(true), 600);
+    } else if (this.game.checkGameOver()) {
+      this.playSound('error');
+      setTimeout(() => this.showGameOverOverlay(false), 600);
+    }
+  }
+
+  showGameOverOverlay(isWin) {
+    this.dialogTitle.textContent = isWin ? "Victory Achieved!" : "Simulation Locked";
+    
+    const nextIdx = this.game.levelIndex + 1;
+    const hasNext = isWin && this.game.mode === 'puzzle' && nextIdx < window.levels.length;
+
+    this.levelList.innerHTML = `
+      <div style="text-align: center; padding: 20px 0;">
+        <p style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 12px;">
+          ${isWin ? "All malware qubits isolated and purged!" : "No legal moves remaining in circuit matrix."}
+        </p>
+        <p style="font-size: 1.5rem; font-weight: 800; color: var(--qubit-cyan);">
+          Score: ${this.game.score}
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        ${hasNext ? `<button id="btn-next-level" class="btn primary">Next Circuit Matrix</button>` : ''}
+        <button id="btn-restart-game" class="btn">Retry Circuit</button>
+        <button id="btn-menu-back" class="btn">Change Level</button>
+      </div>
+    `;
+
+    // Hook dialog buttons
+    const restartBtn = document.getElementById('btn-restart-game');
+    restartBtn.addEventListener('click', () => {
+      this.game.init();
+      this.overlay.classList.remove('active');
+      this.render();
+    });
+
+    const menuBtn = document.getElementById('btn-menu-back');
+    menuBtn.addEventListener('click', () => {
+      this.openLevelSelect();
+    });
+
+    if (hasNext) {
+      const nextBtn = document.getElementById('btn-next-level');
+      nextBtn.addEventListener('click', () => {
+        this.game = new NoogGame('puzzle', nextIdx);
+        this.overlay.classList.remove('active');
+        this.render();
+      });
+    }
+
+    this.overlay.classList.add('active');
+  }
+
+  handleCellPlacement(r, c) {
+    const res = this.game.placeStone(r, c);
+    if (res.success) {
+      this.playSound('place');
+      
+      // Execute particle explosion for animations
+      res.events.forEach(event => {
+        if (event.type === 'merge') {
+          this.playSound('merge');
+          this.spawnMergeParticles(event.to.r, event.to.c);
+        } else if (event.type === 'merge-clear') {
+          this.playSound('clear');
+          this.spawnClearParticles(event.to.r, event.to.c);
+        } else if (event.type === 'capture-enemy') {
+          this.playSound('capture');
+          event.cells.forEach(cell => this.spawnCaptureParticles(cell.r, cell.c, 'enemy'));
+        } else if (event.type === 'capture-player-hazard') {
+          this.playSound('error');
+          event.cells.forEach(cell => this.spawnCaptureParticles(cell.r, cell.c, 'player'));
+        } else if (event.type === 'line-clear') {
+          this.playSound('clear');
+          event.cells.forEach(cell => this.spawnCaptureParticles(cell.r, cell.c, 'clear'));
+          this.triggerLineLaserEffect(event.rows, event.cols);
+        }
+      });
+      
+      this.render();
+    } else {
+      this.playSound('error');
+      // Highlight cell in red momentarily
+      const cells = this.gridElement.children;
+      const idx = r * this.game.boardSize + c;
+      if (cells[idx]) {
+        cells[idx].classList.add('invalid-hover');
+        setTimeout(() => {
+          if (cells[idx]) cells[idx].classList.remove('invalid-hover');
+        }, 300);
+      }
+    }
+  }
+
+  handleCellHover(cell, r, c) {
+    if (this.game.hand.length === 0 || this.game.hand[0] === null) return;
+    const val = this.game.hand[0];
+
+    const isValid = this.game.isValidMove(r, c, val);
+    cell.className = `cell ${isValid ? 'valid-hover' : 'invalid-hover'}`;
+    
+    // Highlight elements that would change
+    if (isValid) {
+      // 1. Merge highlight
+      const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      dirs.forEach(([dr, dc]) => {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < this.game.boardSize && nc >= 0 && nc < this.game.boardSize) {
+          const neighbor = this.game.board[nr][nc];
+          if (neighbor && neighbor.color === 'player' && neighbor.value === val) {
+            const idx = nr * this.game.boardSize + nc;
+            const neighborCell = this.gridElement.children[idx];
+            if (neighborCell) {
+              neighborCell.style.borderColor = 'var(--qubit-cyan)';
+              neighborCell.style.boxShadow = '0 0 10px var(--qubit-cyan-glow)';
+            }
+          }
+        }
+      });
+
+      // 2. Flanking flip preview
+      const flipDirs = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+      ];
+      flipDirs.forEach(([dr, dc]) => {
+        let curR = r + dr;
+        let curC = c + dc;
+        const potentialFlips = [];
+
+        while (
+          curR >= 0 && curR < this.game.boardSize &&
+          curC >= 0 && curC < this.game.boardSize
+        ) {
+          const stone = this.game.board[curR][curC];
+          if (stone && stone.color === 'enemy') {
+            potentialFlips.push({ r: curR, c: curC });
+          } else if (stone && stone.color === 'player') {
+            // Sandwich found! Highlight flips
+            potentialFlips.forEach(cell => {
+              const idx = cell.r * this.game.boardSize + cell.c;
+              const flipCell = this.gridElement.children[idx];
+              if (flipCell) {
+                flipCell.style.borderColor = 'var(--qubit-cyan)';
+                flipCell.style.transform = 'scale(0.95)';
+              }
+            });
+            break;
+          } else {
+            break;
+          }
+          curR += dr;
+          curC += dc;
+        }
+      });
+    }
+  }
+
+  clearPreMergePreviews() {
+    Array.from(this.gridElement.children).forEach(cell => {
+      if (!cell.querySelector('.stone')) {
+        cell.style.borderColor = '';
+        cell.style.boxShadow = '';
+      } else {
+        cell.style.borderColor = '';
+        cell.style.transform = '';
+      }
+    });
+  }
+
+  // Laser Sweep Animations
+  triggerLineLaserEffect(rows, cols) {
+    const rect = this.gridElement.getBoundingClientRect();
+    
+    rows.forEach(r => {
+      const laser = document.createElement('div');
+      laser.className = 'laser-beam row';
+      laser.style.top = `${(r + 0.5) * (rect.height / 6)}px`;
+      this.gridElement.appendChild(laser);
+      setTimeout(() => laser.remove(), 500);
+    });
+
+    cols.forEach(c => {
+      const laser = document.createElement('div');
+      laser.className = 'laser-beam col';
+      laser.style.left = `${(c + 0.5) * (rect.width / 6)}px`;
+      this.gridElement.appendChild(laser);
+      setTimeout(() => laser.remove(), 500);
+    });
+  }
+
+  // Particle Canvas Methods
+  resizeCanvas() {
+    const rect = this.gridElement.getBoundingClientRect();
+    this.particleCanvas.width = rect.width;
+    this.particleCanvas.height = rect.height;
+  }
+
+  spawnMergeParticles(r, c) {
+    const rect = this.gridElement.getBoundingClientRect();
+    const cellWidth = rect.width / 6;
+    const x = (c + 0.5) * cellWidth;
+    const y = (r + 0.5) * cellWidth;
+    
+    for (let i = 0; i < 15; i++) {
+      this.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3,
+        radius: Math.random() * 3 + 2,
+        color: 'rgba(0, 240, 255, 0.8)',
+        alpha: 1,
+        decay: Math.random() * 0.03 + 0.02
+      });
+    }
+  }
+
+  spawnClearParticles(r, c) {
+    const rect = this.gridElement.getBoundingClientRect();
+    const cellWidth = rect.width / 6;
+    const x = (c + 0.5) * cellWidth;
+    const y = (r + 0.5) * cellWidth;
+    
+    for (let i = 0; i < 20; i++) {
+      this.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        radius: Math.random() * 4 + 3,
+        color: '#f8fafc',
+        alpha: 1,
+        decay: Math.random() * 0.04 + 0.02
+      });
+    }
+  }
+
+  spawnCaptureParticles(r, c, type) {
+    const rect = this.gridElement.getBoundingClientRect();
+    const cellWidth = rect.width / 6;
+    const x = (c + 0.5) * cellWidth;
+    const y = (r + 0.5) * cellWidth;
+    
+    const color = type === 'enemy' ? 'rgba(255, 94, 0, 0.8)' : 
+                  type === 'player' ? 'rgba(0, 240, 255, 0.8)' : '#a5f3fc';
+    
+    for (let i = 0; i < 12; i++) {
+      this.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: (Math.random() - 0.5) * 2.5,
+        radius: Math.random() * 3 + 1.5,
+        color,
+        alpha: 1,
+        decay: Math.random() * 0.03 + 0.015
+      });
+    }
+  }
+
+  animateParticles() {
+    requestAnimationFrame(() => this.animateParticles());
+    
+    this.ctx.clearRect(0, 0, this.particleCanvas.width, this.particleCanvas.height);
+    
+    this.particles.forEach((p, idx) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha -= p.decay;
+      
+      if (p.alpha <= 0) {
+        this.particles.splice(idx, 1);
+      } else {
+        this.ctx.save();
+        this.ctx.globalAlpha = p.alpha;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        this.ctx.fillStyle = p.color;
+        this.ctx.shadowBlur = 6;
+        this.ctx.shadowColor = p.color;
+        this.ctx.fill();
+        this.ctx.restore();
+      }
+    });
+  }
+}
+
+// Start Game UI on load
+window.addEventListener('DOMContentLoaded', () => {
+  window.app = new NoogUI();
+});
