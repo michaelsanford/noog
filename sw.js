@@ -1,4 +1,4 @@
-const CACHE_NAME = 'noog-cache-v4';
+const CACHE_NAME = 'noog-cache-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './src/game.js',
   './src/ui.js',
   './src/levels.js',
+  './src/sw-register.js',
   './icons/icon-512.jpg'
 ];
 
